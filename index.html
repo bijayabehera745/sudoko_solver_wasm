@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sudoku Solver (WASM)</title>
+  <style>
+    body { font-family: Arial; text-align: center; padding: 20px; }
+    .sudoku-grid {
+      display: grid;
+      grid-template-columns: repeat(9, 40px);
+      grid-template-rows: repeat(9, 40px);
+      border: 3px solid black;
+      gap: 0;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+    .sudoku-cell {
+      width: 40px; height: 40px; font-size: 20px;
+      text-align: center; border: 1px solid #aaa;
+      box-sizing: border-box;
+    }
+    /* Right borders */
+    .sudoku-cell:nth-child(3n) { border-right: 2px solid black; }
+    /* Bottom borders */
+    .sudoku-cell:nth-child(n+19):nth-child(-n+27),
+    .sudoku-cell:nth-child(n+46):nth-child(-n+54) {
+      border-bottom: 2px solid black;
+    }
+    /* Left borders of boxes */
+    .sudoku-cell:nth-child(9n + 1),
+    .sudoku-cell:nth-child(9n + 4),
+    .sudoku-cell:nth-child(9n + 7) {
+      border-left: 2px solid black;
+    }
+    .sudoku-cell:focus { outline: 2px solid #4CAF50; }
+    button {
+      padding: 10px 20px; font-size: 16px; margin: 5px; cursor: pointer;
+    }
+    @media (max-width: 600px) {
+      .sudoku-grid {
+        grid-template-columns: repeat(9, 30px);
+        grid-template-rows: repeat(9, 30px);
+      }
+      .sudoku-cell {
+        width: 30px; height: 30px; font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Sudoku Solver (WASM)</h2>
+
+  <div class="sudoku-grid" id="sudokuGrid"></div>
+
+  <div>
+    <button id="solveBtn">Solve</button>
+
+    <button onclick="clearGrid()">Clear</button>
+  </div>
+
+  <p><strong>Tip:</strong> Input 1–9 or leave blank (treated as “.”).</p>
+
+  <script>
+    var Module = {
+      onRuntimeInitialized: function () {
+        document.getElementById("solveBtn").onclick = function () {
+          let s = "";
+          for (let i = 0; i < 81; i++) {
+            let v = document.getElementById("cell-" + i).value.trim();
+            s += (v >= '1' && v <= '9') ? v : ".";
+          }
+          let ptr = Module._malloc(81);
+          Module.stringToUTF8(s, ptr, 82);
+          Module.cwrap("solveSudoku", null, ["number"])(ptr);
+          let res = Module.UTF8ToString(ptr);
+          Module._free(ptr);
+          for (let i = 0; i < 81; i++) {
+            document.getElementById("cell-" + i).value = res[i];
+          }
+        }
+      }
+    };
+
+    const grid = document.getElementById("sudokuGrid");
+    for (let i = 0; i < 81; i++) {
+      let inp = document.createElement("input");
+      inp.type = "text";
+      inp.maxLength = 1;
+      inp.id = "cell-" + i;
+      inp.className = "sudoku-cell";
+      grid.appendChild(inp);
+    }
+
+    function clearGrid() {
+      for (let i = 0; i < 81; i++) {
+        document.getElementById("cell-" + i).value = "";
+      }
+    }
+  </script>
+   <script src="sudoku.js"></script>
+</body>
+</html>
